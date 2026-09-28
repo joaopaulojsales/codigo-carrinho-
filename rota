@@ -1,0 +1,87 @@
+// Definição dos pinos da Ponte H (ex: módulo L298N)
+int ena = 9;  // Controle de velocidade do Motor A (deve ser um pino PWM)
+int in1 = 8;  // Controle de direção 1 do Motor A
+int in2 = 7;  // Controle de direção 2 do Motor A
+int in3 = 6;  // Controle de direção 1 do Motor B
+int in4 = 5;  // Controle de direção 2 do Motor B
+int enb = 3;  // Controle de velocidade do Motor B (deve ser um pino PWM)
+
+// Definição do pino do potenciômetro
+int potPin = A0; // Entrada analógica para ler a posição do potenciômetro
+
+void setup() {
+  // Configura os pinos de direção e velocidade da Ponte H como saídas de sinal
+  pinMode(ena, OUTPUT);
+  pinMode(in1, OUTPUT);
+  pinMode(in2, OUTPUT);
+  pinMode(in3, OUTPUT);
+  pinMode(in4, OUTPUT);
+  pinMode(enb, OUTPUT);
+}
+
+void loop() {
+  // Laço que se repete 4 vezes (uma para cada lado do quadrado)
+  for (int i = 0; i < 4; i++) {
+    frente();        // Aciona os motores para andar em linha reta
+    delay(2000);     // Tempo que o carrinho fica andando (determina o tamanho do lado)
+    
+    parar();         // Desliga os motores para evitar inércia na curva
+    delay(500);      // Espera meio segundo para estabilizar o chassi
+    
+    virarDireita();  // Aciona os motores em sentidos opostos para virar no próprio eixo
+    delay(800);      // Tempo necessário para girar exatamente 90 graus (requer ajuste prático na pista)
+    
+    parar();         // Para novamente ao fim da curva
+    delay(500);      // Espera antes de acelerar para o próximo lado
+  }
+  
+  // Após completar o percurso (4 lados), o programa entra em um laço infinito
+  // Isso impede que o void loop() reinicie e o carrinho continue andando sozinho
+  while (true); 
+}
+
+void ajustarVelocidade() {
+  // Lê o valor bruto do potenciômetro (varia de 0 a 1023)
+  // Usa a função map() para converter essa escala para o padrão PWM do Arduino (0 a 255)
+  int vel = map(analogRead(potPin), 0, 1023, 0, 255);
+  
+  // Aplica o valor convertido aos pinos Enable (ENA e ENB) da ponte H
+  analogWrite(ena, vel);
+  analogWrite(enb, vel);
+}
+
+void frente() {
+  ajustarVelocidade(); // Atualiza a força dos motores com base no potenciômetro
+  
+  // Motor A girando para frente
+  digitalWrite(in1, HIGH);
+  digitalWrite(in2, LOW);
+  
+  // Motor B girando para frente
+  digitalWrite(in3, HIGH);
+  digitalWrite(in4, LOW);
+}
+
+void virarDireita() {
+  ajustarVelocidade(); // Atualiza a força dos motores
+  
+  // Motor A girando para frente
+  digitalWrite(in1, HIGH);
+  digitalWrite(in2, LOW);
+  
+  // Motor B girando para trás (causa o giro no próprio eixo para a direita)
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, HIGH);
+}
+
+void parar() {
+  // Zera o sinal PWM (corta a força dos motores)
+  analogWrite(ena, 0);
+  analogWrite(enb, 0);
+  
+  // Desliga os pinos de direção como medida de segurança
+  digitalWrite(in1, LOW);
+  digitalWrite(in2, LOW);
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, LOW);
+}
